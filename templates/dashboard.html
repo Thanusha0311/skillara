@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Skillara Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { background:#f4f7fc; }
+
+        .sidebar {
+            background:#1e293b;
+            min-height:100vh;
+            color:white;
+        }
+
+        .sidebar a {
+            color:white;
+            text-decoration:none;
+            display:block;
+            padding:12px;
+            border-radius:10px;
+            margin-bottom:10px;
+        }
+
+        .sidebar a:hover { background:#334155; }
+
+        .card {
+            border:none;
+            border-radius:20px;
+        }
+
+        .skill-badge {
+            display:inline-block;
+            padding:10px 15px;
+            border-radius:10px;
+            margin:5px;
+            color:white;
+            font-weight:bold;
+        }
+
+        .green { background:#16a34a; }
+        .red { background:#dc2626; }
+        .blue { background:#2563eb; }
+    </style>
+</head>
+
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar p-4">
+            <h2 class="text-center">Skillara</h2>
+            <hr>
+
+            <a href="/dashboard">Dashboard</a>
+            <a href="/profile">Profile</a>
+            <a href="/resume">Resume Upload</a>
+            <a href="/mock">Mock Interview</a>
+            <a href="/placement-plan/1">7-Day MCQ Plan</a>
+            <a href="/leaderboard">Leaderboard</a>
+            <a href="/certificate">Download Certificate</a>
+            <a href="/logout">Logout</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 p-4">
+
+            <h1 class="mb-4">Welcome {{ student.name }} 👋</h1>
+
+            <!-- Notifications -->
+            <div class="card shadow border-0 rounded-4 p-4 mb-4">
+
+                <div class="d-flex justify-content-between">
+                    <h4>🔔 Notifications</h4>
+                    <span class="badge bg-primary">
+                        {{ notifications|length }}
+                    </span>
+                </div>
+
+                {% if notifications %}
+                    <ul class="list-group mt-3">
+                        {% for n in notifications %}
+                        <li class="list-group-item">
+                            <strong>{{ n.title }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ n.message }}
+                            </small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted mt-3">
+                        No notifications available
+                    </p>
+                {% endif %}
+
+            </div>
+
+            <!-- Top Cards -->
+            <div class="row">
+
+                <div class="col-md-3">
+                    <div class="card shadow p-4">
+                        <h5>Placement Readiness</h5>
+                        <h1>{{ readiness }}%</h1>
+
+                        <div class="progress">
+                            <div class="progress-bar"
+                                 style="width: {{ readiness }}%">
+                                {{ readiness }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                
+
+                <div class="col-md-3">
+                    <div class="card shadow p-4">
+                        <h5>Placement Prediction</h5>
+                        <h1>{{ placement_chance }}%</h1>
+
+                        <div class="progress">
+                            <div class="progress-bar bg-success"
+                                 style="width: {{ placement_chance }}%">
+                                {{ placement_chance }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card shadow p-4">
+                        <h5>Career Recommendation</h5>
+                        <h3>{{ career }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card shadow p-4">
+                        <h5>Profile Completion</h5>
+                        <h1>{{ overall_progress }}%</h1>
+
+                        <div class="progress">
+                            <div class="progress-bar bg-warning"
+                                 style="width: {{ overall_progress }}%">
+                                {{ overall_progress }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow p-4 mt-4">
+    <h3>Leaderboard Rank</h3>
+
+    {% if rank %}
+        <h1>#{{ rank }}</h1>
+        <p>Out of {{ total_rank_students }} students</p>
+    {% else %}
+        <p>Take mock test to get ranked.</p>
+    {% endif %}
+</div>
+
+            </div>
+
+            <!-- Placement Journey -->
+            <div class="card shadow border-0 rounded-4 p-4 mt-4">
+
+                <h3>Placement Journey</h3>
+
+                <h4>{{ placement_progress }}% Completed</h4>
+
+                <div class="progress mt-3">
+                    <div class="progress-bar bg-success"
+                         style="width: {{ placement_progress }}%">
+                        {{ placement_progress }}%
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+
+                    {% for d in day_status %}
+
+                    <div class="col-md-3 mb-3">
+
+                        <div class="card text-center p-3 shadow-sm">
+
+                            <h6>Day {{ d.day }}</h6>
+
+                            {% if d.status == "Completed" %}
+
+                                <span class="badge bg-success">
+                                    ✅ Completed
+                                </span>
+
+                            {% elif d.day == 1 %}
+
+                                <span class="badge bg-primary">
+                                    🔓 Unlocked
+                                </span>
+
+                            {% elif day_status[d.day - 2].status == "Completed" %}
+
+                                <span class="badge bg-primary">
+                                    🔓 Unlocked
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-secondary">
+                                    🔒 Locked
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+                <a href="/placement-plan/1"
+                   class="btn btn-primary mt-3">
+                    Continue Preparation
+                </a>
+
+            </div>
+
+            <!-- Resume ATS Score -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Resume ATS Score</h3>
+
+                {% if student.resume_score %}
+                    <h1>{{ student.resume_score }}%</h1>
+
+                    <div class="progress">
+                        <div class="progress-bar bg-info"
+                             style="width: {{ student.resume_score }}%;">
+                            {{ student.resume_score }}%
+                        </div>
+                    </div>
+                {% else %}
+                    <p>Upload resume to get ATS score.</p>
+                    <a href="/resume" class="btn btn-primary">
+                        Upload Resume
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Certificate -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Certificate</h3>
+                <p>Download your Skillara placement readiness certificate.</p>
+
+                <a href="/certificate" class="btn btn-primary">
+                    Download Certificate
+                </a>
+            </div>
+
+            <!-- Skills -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Your Skills</h3>
+
+                {% for skill in student.skills.split(",") %}
+                    <span class="skill-badge green">
+                        {{ skill }}
+                    </span>
+                {% endfor %}
+            </div>
+
+            <!-- Target Role -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Target Role</h3>
+                <span class="skill-badge blue">
+                    {{ student.target_role }}
+                </span>
+            </div>
+
+            <!-- Missing Skills -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Missing Skills</h3>
+
+                {% if missing_skills %}
+                    {% for skill in missing_skills %}
+                        <span class="skill-badge red">
+                            {{ skill }}
+                        </span>
+                    {% endfor %}
+                {% else %}
+                    <p>No missing skills detected.</p>
+                {% endif %}
+            </div>
+
+            <!-- Learning Resources -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Recommended Learning Resources</h3>
+
+                {% if resources %}
+                    <ul>
+                        {% for skill, link in resources.items() %}
+                        <li class="mb-2">
+                            <strong>{{ skill }}</strong> -
+                            <a href="{{ link }}" target="_blank">
+                                Learn Here
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No learning resources available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Suggestions -->
+            <div class="card shadow p-4 mt-4">
+                <h3>AI Mentor Suggestions</h3>
+
+                <ul>
+                    {% for s in suggestions %}
+                    <li class="mb-2">
+                        {{ s }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Companies -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Recommended Companies</h3>
+
+                {% for company in recommended_companies %}
+                    <span class="skill-badge blue">
+                        {{ company }}
+                    </span>
+                {% endfor %}
+            </div>
+
+            <!-- Study Planner -->
+            <div class="card shadow p-4 mt-4">
+                <h3>AI Study Planner</h3>
+
+                <ul>
+                    {% for task in study_plan %}
+                    <li class="mb-2">
+                        {{ task }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Roadmap -->
+            <div class="card shadow p-4 mt-4">
+                <h3>AI Career Roadmap</h3>
+
+                <ul>
+                    {% for step in roadmap %}
+                    <li class="mb-2">
+                        {{ step }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Eligibility -->
+            <div class="card shadow p-4 mt-4">
+                <h3>Job Eligibility Checker</h3>
+
+                <h5 class="text-success mt-3">
+                    Eligible Companies
+                </h5>
+
+                {% if eligible_companies %}
+                    {% for company in eligible_companies %}
+                        <span class="skill-badge green">
+                            {{ company }}
+                        </span>
+                    {% endfor %}
+                {% else %}
+                    <p>No eligible companies yet.</p>
+                {% endif %}
+
+                <h5 class="text-danger mt-4">
+                    Need Improvement
+                </h5>
+
+                {% for item in not_eligible_companies %}
+                <div class="alert alert-warning">
+                    <b>{{ item.name }}</b>
+                    <ul>
+                        {% for reason in item.reason %}
+                        <li>{{ reason }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Chart -->
+            <div class="card shadow border-0 rounded-4 p-4 mt-4 text-center">
+                <h3>Readiness Chart</h3>
+
+                <div style="width:300px; margin:auto;">
+                    <canvas id="readinessChart"
+                            width="220"
+                            height="220">
+                    </canvas>
+                </div>
+            </div>
+
+            <!-- Feedback -->
+            <div class="card shadow border-0 rounded-4 p-4 mt-4">
+                <h3>AI Overall Feedback</h3>
+
+                {% if placement_chance >= 80 %}
+                    <div class="alert alert-success mt-3">
+                        Excellent placement readiness. Keep improving projects and mock interviews.
+                    </div>
+
+                {% elif placement_chance >= 60 %}
+                    <div class="alert alert-warning mt-3">
+                        Good progress. Improve technical and aptitude skills.
+                    </div>
+
+                {% else %}
+                    <div class="alert alert-danger mt-3">
+                        Focus on missing skills, aptitude, and mock interview preparation.
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+const ctx = document.getElementById('readinessChart');
+
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Ready', 'Need Improvement'],
+        datasets: [{
+            data: [{{ readiness }}, {{ 100 - readiness }}]
+        }]
+    }
+});
+</script>
+
+</body>
+</html>

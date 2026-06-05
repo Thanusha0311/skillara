@@ -1,0 +1,6 @@
+Flask
+Flask-MySQLdb
+PyPDF2
+pandas
+scikit-learn
+Flask-Mail
