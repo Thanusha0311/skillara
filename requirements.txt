@@ -1,6 +1,7 @@
 Flask
-Flask-MySQLdb
+pymongo
+dnspython
 PyPDF2
-pandas
-scikit-learn
-Flask-Mail
+Werkzeug
+reportlab
+gunicorn
