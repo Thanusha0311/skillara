@@ -17,6 +17,8 @@ app.secret_key = "skillara"
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -410,19 +412,22 @@ def register():
 
     if request.method == 'POST':
 
-        email = request.form['email']
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-        existing_user = students.find_one({
-            "email": email
-        })
+        if not name or not email or not password:
+            return "All fields are required"
+
+        existing_user = students.find_one({"email": email})
 
         if existing_user:
             return "Email already registered"
 
         student = {
-            "name": request.form['name'],
+            "name": name,
             "email": email,
-            "password": request.form['password']
+            "password": password
         }
 
         students.insert_one(student)
