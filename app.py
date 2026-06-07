@@ -169,25 +169,7 @@ def get_learning_resources(missing_skills):
 
     return result
 
-def get_mcq_progress(student):
 
-    completed_days = 0
-    day_scores = []
-
-    for day in range(1, 8):
-        score = student.get(f"day{day}_score")
-
-        if score is not None:
-            completed_days += 1
-
-        day_scores.append({
-            "day": day,
-            "score": score
-        })
-
-    progress = round((completed_days / 7) * 100)
-
-    return progress, day_scores
 def generate_suggestions(student):
 
     suggestions = []
@@ -210,26 +192,11 @@ def generate_suggestions(student):
 
     return suggestions
 
-def get_student_rank(student):
-
-    all_students = list(students.find())
-
-    all_students.sort(
-        key=lambda x: x.get("mock_score", 0),
-        reverse=True
-    )
-
-    for index, s in enumerate(all_students, start=1):
-        if s.get("email") == student.get("email"):
-            return index, len(all_students)
-
-    return 0, len(all_students)
-
-
 def recommend_companies(student):
+
     recommended = []
 
-    cgpa = float(student.get("cgpa", 0))
+    cgpa = safe_float(student.get("cgpa", 0))
     skills = student.get("skills", "").lower()
 
     if cgpa >= 6:
@@ -276,7 +243,7 @@ def generate_study_plan(student):
 
 def check_job_eligibility(student):
 
-    cgpa = float(student.get("cgpa", 0))
+    cgpa = safe_float(student.get("cgpa", 0))
     student_skills = student.get("skills", "").lower()
 
     eligible = []
@@ -288,7 +255,7 @@ def check_job_eligibility(student):
 
         missing = []
 
-        if cgpa < float(company.get("min_cgpa", 0)):
+        if cgpa < safe_float(company.get("min_cgpa", 0)):
             missing.append(
                 f"CGPA should be at least {company.get('min_cgpa')}"
             )
@@ -301,12 +268,14 @@ def check_job_eligibility(student):
                 )
 
         if missing:
+
             not_eligible.append({
                 "name": company.get("name"),
                 "reason": missing
             })
 
         else:
+
             eligible.append(company.get("name"))
 
     return eligible, not_eligible
@@ -340,26 +309,7 @@ def profile_completion(student):
     return round((completed / len(fields)) * 100)
 
 
-def generate_notifications(student):
 
-    notifications = []
-
-    if not student.get("resume_uploaded"):
-        notifications.append(
-            "Upload Resume"
-        )
-
-    if student.get("mock_score", 0) < 60:
-        notifications.append(
-            "Take Mock Test Again"
-        )
-
-    if float(student.get("cgpa", 0)) < 7:
-        notifications.append(
-            "Improve CGPA"
-        )
-
-    return notifications
 
 
 def generate_roadmap(role):
@@ -496,12 +446,65 @@ def profile():
 
 
 
+def get_mcq_progress(student):
+
+    completed_days = 0
+    day_scores = []
+
+    for day in range(1, 8):
+
+        score = student.get(f"day{day}_score")
+
+        if score is not None:
+            completed_days += 1
+
+        day_scores.append({
+            "day": day,
+            "score": score
+        })
+
+    progress = round((completed_days / 7) * 100)
+
+    return progress, day_scores
+
+
+def get_placement_progress(student):
+
+    completed = 0
+    day_status = []
+
+    for day in range(1, 8):
+
+        score = student.get(f"day{day}_score")
+
+        if score is not None:
+            completed += 1
+            status = "Completed"
+        else:
+            status = "Pending"
+
+        day_status.append({
+            "day": day,
+            "status": status
+        })
+
+    progress = round((completed / 7) * 100)
+
+    return progress, day_status
+
+
 def get_student_rank(student):
 
     all_students = list(students.find())
 
+    def score_value(s):
+        try:
+            return float(s.get("mock_score", 0))
+        except:
+            return 0
+
     all_students.sort(
-        key=lambda x: float(x.get("mock_score", 0)),
+        key=score_value,
         reverse=True
     )
 
@@ -515,61 +518,81 @@ def get_student_rank(student):
 @app.route('/dashboard')
 def dashboard():
 
-    if "email" not in session:
-        return redirect('/login')
+    try:
 
-    student = students.find_one({"email": session["email"]})
+        if "email" not in session:
+            return redirect('/login')
 
-    if not student:
-        session.clear()
-        return redirect('/login')
+        student = students.find_one({"email": session["email"]})
 
-    if not student.get("skills"):
-        return redirect('/profile')
-    readiness = calculate_readiness(student)
-    career = recommend_career(student)
-    missing_skills = get_missing_skills(student)
-    resources = get_learning_resources(missing_skills)
-    suggestions = generate_suggestions(student)
-    recommended_companies = recommend_companies(student)
-    study_plan = generate_study_plan(student)
-    eligible_companies, not_eligible_companies = check_job_eligibility(student)
-    overall_progress = profile_completion(student)
-    placement_chance = placement_prediction(student)
-    roadmap = generate_roadmap(student.get("target_role", ""))
-    notifications = list(
-        notifications_collection.find()
-        .sort("_id", -1)
-        .limit(3)
-    )
-    mcq_progress, day_scores = get_mcq_progress(student)
-    placement_progress, day_status = get_placement_progress(student)
-    rank, total_rank_students = get_student_rank(student)
-    rank, total_rank_students = get_student_rank(student)
+        if not student:
+            session.clear()
+            return redirect('/login')
 
-    return render_template(
-        "dashboard.html",
-        student=student,
-        readiness=readiness,
-        career=career,
-        missing_skills=missing_skills,
-        resources=resources,
-        suggestions=suggestions,
-        recommended_companies=recommended_companies,
-        study_plan=study_plan,
-        eligible_companies=eligible_companies,
-        not_eligible_companies=not_eligible_companies,
-        overall_progress=overall_progress,
-        placement_chance=placement_chance,
-        roadmap=roadmap,
-        notifications=notifications,
-        mcq_progress=mcq_progress,
-        day_scores=day_scores,
-        placement_progress=placement_progress,
-        day_status=day_status,
-        rank=rank,
-        total_rank_students=total_rank_students
-    )
+        if not student.get("skills"):
+            return redirect('/profile')
+
+        readiness = calculate_readiness(student)
+        career = recommend_career(student)
+        missing_skills = get_missing_skills(student)
+        resources = get_learning_resources(missing_skills)
+        suggestions = generate_suggestions(student)
+        recommended_companies = recommend_companies(student)
+
+        study_plan = generate_study_plan(student)
+
+        eligible_companies, not_eligible_companies = check_job_eligibility(student)
+
+        overall_progress = profile_completion(student)
+
+        placement_chance = placement_prediction(student)
+
+        roadmap = generate_roadmap(
+            student.get("target_role", "")
+        )
+
+        notifications = list(
+            notifications_collection.find()
+            .sort("_id", -1)
+            .limit(3)
+        )
+
+        mcq_progress, day_scores = get_mcq_progress(student)
+
+        placement_progress, day_status = get_placement_progress(student)
+
+        rank, total_rank_students = get_student_rank(student)
+
+        return render_template(
+            "dashboard.html",
+            student=student,
+            readiness=readiness,
+            career=career,
+            missing_skills=missing_skills,
+            resources=resources,
+            suggestions=suggestions,
+            recommended_companies=recommended_companies,
+            study_plan=study_plan,
+            eligible_companies=eligible_companies,
+            not_eligible_companies=not_eligible_companies,
+            overall_progress=overall_progress,
+            placement_chance=placement_chance,
+            roadmap=roadmap,
+            notifications=notifications,
+            mcq_progress=mcq_progress,
+            day_scores=day_scores,
+            placement_progress=placement_progress,
+            day_status=day_status,
+            rank=rank,
+            total_rank_students=total_rank_students
+        )
+
+    except Exception as e:
+
+        return f"""
+        <h2>Dashboard Error</h2>
+        <p>{str(e)}</p>
+        """
 @app.route('/resume', methods=['GET', 'POST'])
 def resume():
 
@@ -902,29 +925,7 @@ def admin_login():
 
     return render_template("admin_login.html")
 
-def get_placement_progress(student):
 
-    completed = 0
-    day_status = []
-
-    for day in range(1, 8):
-
-        score = student.get(f"day{day}_score")
-
-        if score is not None:
-            completed += 1
-            status = "Completed"
-        else:
-            status = "Pending"
-
-        day_status.append({
-            "day": day,
-            "status": status
-        })
-
-    progress = round((completed / 7) * 100)
-
-    return progress, day_status
 
 @app.route('/admin-dashboard')
 def admin_dashboard():
@@ -1240,6 +1241,17 @@ def export_students():
             "attachment; filename=students.csv"
         }
     )
+@app.route('/test-dashboard')
+def test_dashboard():
+
+    student = students.find_one({"email": session.get("email")})
+
+    return {
+        "cgpa": str(student.get("cgpa")),
+        "aptitude": str(student.get("aptitude_score")),
+        "communication": str(student.get("communication_score")),
+        "skills": str(student.get("skills"))
+    }
 
 @app.route('/admin-logout')
 def admin_logout():
