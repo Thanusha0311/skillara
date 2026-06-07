@@ -19,8 +19,10 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
 
 
 def safe_int(value, default=0):
@@ -1263,7 +1265,9 @@ def admin_logout():
 def logout():
     session.clear()
     return redirect('/login')
-
+@app.errorhandler(Exception)
+def handle_error(e):
+    return f"Error: {str(e)}", 500
 
 if __name__ == "__main__":
     app.run(debug=True)
