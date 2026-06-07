@@ -22,10 +22,24 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except:
+        return default
+
+
+def safe_float(value, default=0):
+    try:
+        return float(value)
+    except:
+        return default
 def calculate_readiness(student):
-    aptitude = min(int(student.get("aptitude_score", 0)), 100)
-    communication = min(int(student.get("communication_score", 0)), 100)
-    cgpa = min(float(student.get("cgpa", 0)), 10)
+
+    aptitude = min(safe_int(student.get("aptitude_score", 0)), 100)
+    communication = min(safe_int(student.get("communication_score", 0)), 100)
+    cgpa = min(safe_float(student.get("cgpa", 0)), 10)
 
     skills = student.get("skills", "")
     skill_count = len([s for s in skills.split(",") if s.strip()])
@@ -177,21 +191,18 @@ def get_mcq_progress(student):
 def generate_suggestions(student):
 
     suggestions = []
-
     missing_skills = get_missing_skills(student)
 
     for skill in missing_skills:
-        suggestions.append(
-            f"Learn {skill} to improve your placement readiness."
-        )
+        suggestions.append(f"Learn {skill} to improve placement readiness.")
 
-    if int(student.get("aptitude_score", 0)) < 60:
+    if safe_int(student.get("aptitude_score", 0)) < 60:
         suggestions.append("Practice aptitude daily.")
 
-    if int(student.get("communication_score", 0)) < 60:
+    if safe_int(student.get("communication_score", 0)) < 60:
         suggestions.append("Improve communication skills.")
 
-    if float(student.get("cgpa", 0)) < 7:
+    if safe_float(student.get("cgpa", 0)) < 7:
         suggestions.append("Improve CGPA for better company eligibility.")
 
     if not suggestions:
@@ -302,18 +313,12 @@ def check_job_eligibility(student):
 def placement_prediction(student):
 
     readiness = calculate_readiness(student)
+    mock_score = safe_float(student.get("mock_score", 0))
+    resume_score = safe_float(student.get("resume_score", 70))
 
-    mock_score = float(student.get("mock_score", 0))
+    chance = readiness * 0.5 + mock_score * 0.3 + resume_score * 0.2
 
-    resume_score = float(student.get("resume_score", 70))
-
-    prediction = (
-        readiness * 0.5 +
-        mock_score * 0.3 +
-        resume_score * 0.2
-    )
-
-    return round(prediction, 2)
+    return round(chance, 2)
 def profile_completion(student):
 
     fields = [
