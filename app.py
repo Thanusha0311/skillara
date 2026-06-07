@@ -13,6 +13,8 @@ from flask import send_file
 
 
 app = Flask(__name__)
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 app.secret_key = "skillara_secret_key_123"
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -919,7 +921,7 @@ def admin_login():
         username = request.form['username']
         password = request.form['password']
 
-        if username == "admin" and password == "admin123":
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin"] = True
             return redirect('/admin-dashboard')
 
