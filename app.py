@@ -8,6 +8,7 @@ from bson import ObjectId
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from flask import send_file
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 
@@ -373,7 +374,9 @@ def register():
 
         name = request.form.get('name')
         email = request.form.get('email')
-        password = request.form.get('password')
+        password = generate_password_hash(
+            request.form.get('password')
+        )
 
         if not name or not email or not password:
             return "All fields are required"
@@ -404,12 +407,10 @@ def login():
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
 
-        user = students.find_one({
-            "email": email,
-            "password": password
-        })
+        user = students.find_one({"email": email})
 
-        if user:
+        if user and check_password_hash(user["password"], password):
+
             session["email"] = email
 
             if user.get("cgpa") and user.get("skills") and user.get("target_role"):
