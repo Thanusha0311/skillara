@@ -1,9 +1,14 @@
 import os
+import certifi
 from pymongo import MongoClient
 
 MONGO_URI = os.environ.get("MONGO_URI")
 
-client = MongoClient(MONGO_URI)
+client = MongoClient(
+    MONGO_URI,
+    tls=True,
+    tlsCAFile=certifi.where()
+)
 
 db = client["skillara"]
 
