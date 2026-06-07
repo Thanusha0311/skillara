@@ -13,7 +13,7 @@ from flask import send_file
 
 
 app = Flask(__name__)
-app.secret_key = "skillara"
+app.secret_key = "skillara_secret_key_123"
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
