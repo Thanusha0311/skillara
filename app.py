@@ -442,8 +442,8 @@ def login():
 
     if request.method == 'POST':
 
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
 
         user = students.find_one({
             "email": email,
@@ -451,26 +451,17 @@ def login():
         })
 
         if user:
-
             session["email"] = email
 
-            required_fields = [
-                "cgpa",
-                "skills",
-                "target_role",
-                "aptitude_score",
-                "communication_score"
-            ]
-
-            if all(field in user for field in required_fields):
-
+            if user.get("cgpa") and user.get("skills") and user.get("target_role"):
                 return redirect('/dashboard')
-
             else:
-
                 return redirect('/profile')
 
-        return "Invalid Login"
+        return render_template(
+            "login.html",
+            error="Invalid email or password"
+        )
 
     return render_template("login.html")
 
@@ -518,11 +509,18 @@ def get_student_rank(student):
 
 @app.route('/dashboard')
 def dashboard():
+
     if "email" not in session:
         return redirect('/login')
 
     student = students.find_one({"email": session["email"]})
 
+    if not student:
+        session.clear()
+        return redirect('/login')
+
+    if not student.get("skills"):
+        return redirect('/profile')
     readiness = calculate_readiness(student)
     career = recommend_career(student)
     missing_skills = get_missing_skills(student)
