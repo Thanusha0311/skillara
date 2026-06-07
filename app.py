@@ -666,20 +666,27 @@ def certificate():
 
     student = students.find_one({"email": session["email"]})
 
-    if not student.get("resume_uploaded") or "mock_score" not in student:
-        return "Complete resume upload and mock test before downloading certificate."
+    if not student:
+        return redirect('/login')
 
-    filename = f"Skillara_Certificate_{student['name']}.pdf"
+    # Check resume upload
+    if not student.get("resume_uploaded"):
+        return "Please upload your resume before downloading certificate."
+
+    # Check all 7 days completed
+    for day in range(1, 8):
+        if student.get(f"day{day}_score") is None:
+            return f"Please complete Day {day} MCQ test before downloading certificate."
+
+    filename = f"Skillara_Certificate_{student.get('name', 'Student')}.pdf"
     filepath = os.path.join("uploads", filename)
 
     c = canvas.Canvas(filepath, pagesize=A4)
     width, height = A4
 
-    # Background
     c.setFillColorRGB(0.94, 0.97, 1)
     c.rect(0, 0, width, height, fill=True, stroke=False)
 
-    # Borders
     c.setStrokeColorRGB(0.10, 0.25, 0.55)
     c.setLineWidth(8)
     c.rect(35, 35, width - 70, height - 70, fill=False)
@@ -688,7 +695,6 @@ def certificate():
     c.setLineWidth(3)
     c.rect(55, 55, width - 110, height - 110, fill=False)
 
-    # Logo
     c.setFillColorRGB(0.15, 0.45, 0.95)
     c.circle(100, height - 100, 28, fill=1)
 
@@ -701,38 +707,32 @@ def certificate():
     c.drawString(140, height - 100, "Skillara")
 
     c.setFont("Helvetica", 11)
-    c.drawString(140, height - 120, "Smart AI Career Guidance Platform")
+    c.drawString(140, height - 120, "AI Career Guidance Platform")
 
-    # Title
     c.setFillColorRGB(0.20, 0.55, 0.95)
     c.setFont("Helvetica-Bold", 26)
     c.drawCentredString(width / 2, height - 180, "Certificate of Achievement")
 
-    # Subtitle
     c.setFillColorRGB(0, 0, 0)
     c.setFont("Helvetica", 16)
     c.drawCentredString(width / 2, height - 235, "This certificate is proudly presented to")
 
-    # Student name
     c.setFillColorRGB(0.05, 0.35, 0.70)
     c.setFont("Helvetica-Bold", 32)
     c.drawCentredString(width / 2, height - 285, student.get("name", "Student"))
 
-    # Body
     c.setFillColorRGB(0, 0, 0)
     c.setFont("Helvetica", 15)
     c.drawCentredString(
         width / 2,
         height - 340,
-        "for successfully completing placement readiness activities"
+        "for successfully completing the 7-Day Placement Preparation Plan"
     )
 
     c.setFont("Helvetica-Bold", 15)
     c.drawCentredString(width / 2, height - 385, f"Target Role: {student.get('target_role', 'N/A')}")
-    c.drawCentredString(width / 2, height - 415, f"Mock Test Score: {student.get('mock_score', 0)}%")
-    c.drawCentredString(width / 2, height - 445, f"Resume ATS Score: {student.get('resume_score', 0)}%")
+    c.drawCentredString(width / 2, height - 415, f"Resume ATS Score: {student.get('resume_score', 0)}%")
 
-    # Footer banner
     c.setFillColorRGB(0.10, 0.25, 0.55)
     c.roundRect(90, 105, width - 180, 55, 15, fill=True, stroke=False)
 
@@ -741,10 +741,9 @@ def certificate():
     c.drawCentredString(
         width / 2,
         125,
-        "Smart AI Career Guidance and Placement Readiness System"
+        "Skillara - Smart Career Guidance and Placement Readiness System"
     )
 
-    # Signature
     c.setFillColorRGB(0, 0, 0)
     c.setFont("Helvetica", 12)
     c.drawString(90, 75, "Authorized by Skillara")
